@@ -18,7 +18,7 @@ class Variables:
         self.height_player = 65
         self.x_player = self.WIDHT // 2
         self.y_player = 646
-        self.healt_player = 100
+        self.healt_player = 10
         self.speed_player = 6
         self.delta_x = 1
         self.mouse_pressed = False
@@ -28,7 +28,7 @@ class Variables:
         self.height_enemy = 82
         self.x_enemy = 612
         self.y_enemy = 634
-        self.health_enemy = 100
+        self.health_enemy = 10
         self.ANIMATION_SPEED = 6
 
         # Barra de vida

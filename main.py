@@ -1,8 +1,7 @@
-from pygame import *
-from variables import config
+import pygame
 from menu_inicio import menu_inicio
-from random import randint
 
-menu_inicio()
+pygame.init()
 
-#  https://heltonyan.itch.io/pixelcombat
+if __name__ == "__main__":
+    menu_inicio()

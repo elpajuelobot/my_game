@@ -6,6 +6,8 @@ class Player:
     def __init__(self):
         self.x = config.x_player
         self.y = config.y_player
+        config.widht_player = 35
+        config.height_player = 65
         self.hitbox_player = Rect(self.x, self.y, config.widht_player, config.height_player)
         self.is_jumping = False
         self.jump_count = 9
@@ -93,8 +95,10 @@ class Player:
                 config.widht_player = 42
                 wn.blit(attack_right_path[self.attack_anim_count // 5 % len(attack_right_path)], (self.x, self.y))
             elif config.delta_x == 0:
+                config.widht_player = 42
                 wn.blit(attack_left_path[self.attack_anim_count // 5 % len(attack_left_path)], (self.x, self.y))
             else:
+                config.widht_player = 42
                 wn.blit(attack_right_path[self.attack_anim_count // 5 % len(attack_right_path)], (self.x, self.y))
 
             self.attack_anim_count += 1 # Avanza la animación de ataque
@@ -135,6 +139,8 @@ class Player:
 
         # Animación de movimiento
         else:
+            config.widht_player = 35
+            config.height_enemy = 65
             if self.moving_right:
                 wn.blit(walk_right_path[self.walk_count // 2 % len(walk_right_path)], (self.x, self.y))
             elif self.moving_left:

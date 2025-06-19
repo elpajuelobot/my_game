@@ -1,0 +1,58 @@
+{
+    "level1": {
+        "intro": [
+            {
+                "personaje": "anciano",
+                "texto": "Buenas caballero, estás a punto de embarcarte en una gran historia. Pero primero debes demostrarme lo que vales.",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "En primer lugar, tendrás que derrotar a este monstruo. Una vez derrotado pasaremos al siguiente entrenamiento.",
+                "duracion": 5
+            }
+        ],
+        "ending_win": [
+            {
+                "personaje": "anciano",
+                "texto": "Bien hecho, lo has derrotado. Pasemos a la siguiente prueba.",
+                "duracion": 5
+            }
+        ],
+        "ending_lose": [
+            {
+                "personaje": "anciano",
+                "texto": "Vaya, ese monstruo ha podido contigo, pero no te rindas, inténtalo de nuevo.",
+                "duracion": 5
+            }
+        ]
+    },
+    "level2": {
+        "intro": [
+            {
+                "personaje": "caballero",
+                "texto": "He superado la primera prueba, ¿qué sigue?",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "Muy bien, caballero. Ahora enfrentarás a una criatura más astuta. Usa lo que aprendiste.",
+                "duracion": 5
+            }
+        ],
+        "ending_win": [
+            {
+                "personaje": "anciano",
+                "texto": "Excelente. Has demostrado coraje e inteligencia. Estás listo para la última prueba.",
+                "duracion": 5
+            }
+        ],
+        "ending_lose": [
+            {
+                "personaje": "anciano",
+                "texto": "Te subestimaste, caballero. Descansa y vuelve a intentarlo.",
+                "duracion": 5
+            }
+        ]
+    }
+}

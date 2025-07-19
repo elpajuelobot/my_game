@@ -1,123 +1,214 @@
 from pygame import *
 from variables import config
 from animaciones import *
+import math
+from random import randint
+from enum import Enum
+
+
+#todo: Clase player
+class PlayerState(Enum):
+    IDLE = "idle"
+    WALKING = "walking"
+    JUMPING = "jumping"
+    ATTACKING = "attacking"
+    HURT = "hurt"
+    DEAD = "dead"
+    CROUCH = "crouch"
+
 
 class Player:
-    def __init__(self):
-        self.x = config.x_player
-        self.y = config.y_player
-        config.widht_player = 35
-        config.height_player = 65
-        self.hitbox_player = Rect(self.x, self.y, config.widht_player, config.height_player)
-        self.is_jumping = False
-        self.jump_count = 9
-        self.is_attack = False
-        self.is_death = False
-        self.moving_left = False
-        self.moving_right = False
-        self.standing = stand_right  # Imagen de pie por defecto
+    def __init__(self, x_ply, y_ply, health, max_health):
+        #TODO: Posición y movimiento
+        self.x = x_ply
+        self.y = y_ply
+        self.base_y = y_ply
+        self.facing_right = True
+        self.crouch = False
+        self.crouch_walk = False
         self.walk_count = 0
+        self.crouch_count = 0
+
+        #TODO: Salto
+        self.jump_count = 9
         self.jump_anim_count = 0 # Contador de animación de salto
+
+        #TODO: Ataque
         self.attack_anim_count = 0 # Contador de animación de ataque
+        self.attack_damage_applied = False
+        self.current_attack_frames = []
+
+        #TODO: Estado y salud
+        self.health = health
+        self.max_health = max_health
+        self.state = PlayerState.IDLE
         self.death_count = 0
         self.death_timer = 0
-        self.health = config.healt_player
-        self.is_hurt = False
-        self.num_hurt = 4
-        self.attack_damage = False
 
-    def move_player(self, keys_pressed, mouse_pressed):
-        """Mueve el jugador según las teclas presionadas"""
-        if not self.is_death and config.show_inventory == False:
-            if keys_pressed[K_d] and self.x < 990:
-                self.x += config.speed_player
-                self.moving_right = True
-                self.moving_left = False
-                config.delta_x = 1
-                # Movimiento del fondo derecha
-                config.bg_x -= config.speed_background
+        #TODO: Dimensiones (mejoras aquí pronto)
+        self.widht_player = 35
+        self.height_player = 65
+        self.hitbox_player = Rect(self.x, self.y, self.widht_player, self.height_player)
 
-            elif keys_pressed[K_a] and self.x > 3:
-                self.x -= config.speed_player
-                self.moving_left = True
-                self.moving_right = False
-                config.delta_x = 0
-                # Movimiento del fondo izquierda
-                config.bg_x += config.speed_background
+    def update(self, keys_pressed, moused_pressed, enemy, can_move, last_key):
+        last_key = key.name(last_key)
+        if not can_move:
+            return
 
+        if self.health <= 0 and self.state != PlayerState.DEAD:
+            self.state = PlayerState.DEAD
+            self.death_count = 0
+
+        if self.state == PlayerState.DEAD:
+            return
+
+        #TODO: Movimiento horizontal
+        if not keys_pressed[K_s]:
+            self.crouch = False
+            self.crouch_walk = False
+        if not keys_pressed[K_s] and self.state != PlayerState.JUMPING:
+            self.y = self.base_y
+
+        is_moving = False
+
+        if keys_pressed[K_s] and keys_pressed[K_d] and self.x < 990:
+            self.crouch = True
+            self.crouch_walk = True
+            self.x += config.speed_player
+            self.facing_right = True
+            is_moving = True
+
+        elif keys_pressed[K_s] and keys_pressed[K_a] and self.x > 3:
+            self.crouch = True
+            self.crouch_walk = True
+            self.x -= config.speed_player
+            self.facing_right = False
+            is_moving = True
+
+        elif keys_pressed[K_s]:
+            self.crouch = True
+            self.crouch_walk = False
+            if last_key == "d":
+                self.facing_right = True
+            elif last_key == "a":
+                self.facing_right = False
+            is_moving = False
+
+        if keys_pressed[K_d] and self.x < 990:
+            self.x += config.speed_player
+            self.facing_right = True
+            is_moving = True
+
+        elif keys_pressed[K_a] and self.x > 3:
+            self.x -= config.speed_player
+            self.facing_right = False
+            is_moving = True
+
+
+        #! Transiciones de estado
+
+        #TODO: Transición a saltar
+        if self.state in [PlayerState.IDLE, PlayerState.WALKING] and keys_pressed[K_SPACE]:
+            self.state = PlayerState.JUMPING
+            self.jump_count = 9
+
+        #TODO: Transición a atacar
+        elif self.state in [PlayerState.IDLE, PlayerState.WALKING] and moused_pressed:
+            self.state = PlayerState.ATTACKING
+            self.attack_anim_count = 0
+            self.attack_damage_applied = False
+
+            #! Elegir tipo de ataque
+            if self.facing_right:
+                self.current_attack_frames = attack_right_combo_path
             else:
-                self.moving_left = False
-                self.moving_right = False
+                self.current_attack_frames = attack_left_combo_path
 
-            if config.delta_x == 1:
-                self.standing = stand_right
+        #TODO: Si está saltando
+        if self.state == PlayerState.JUMPING:
+            neg = 1 if self.jump_count > 0 else -1
+            self.y -= (self.jump_count ** 2) * 0.4 * neg
+            self.jump_count -= 1
+            if self.jump_count < -9:
+                self.state = PlayerState.IDLE
 
+        #TODO: Si está atacando
+        elif self.state == PlayerState.ATTACKING:
+            self.attack_anim_count += 1
+
+            #! Aplicar daño
+            if self.attack_anim_count // 5 >= len(self.current_attack_frames) // 2 and not self.attack_damage_applied:
+                self.check_collision_enemy(enemy)
+                self.attack_damage_applied = True
+
+            #! Una vez acabada
+            if self.attack_anim_count >= len(self.current_attack_frames) * 5:
+                self.state = PlayerState.IDLE
+
+        #TODO: Si está en el suelo
+        elif self.state in [PlayerState.IDLE, PlayerState.WALKING, PlayerState.CROUCH]:
+            if is_moving:
+                self.state = PlayerState.WALKING
+            elif self.crouch:
+                self.state = PlayerState.CROUCH
             else:
-                self.standing = stand_left
+                self.state = PlayerState.IDLE
+            self.walk_count += 1
 
-            if not self.is_jumping:
-                if keys_pressed[K_SPACE]:
-                    self.is_jumping = True
-            else:
-                if self.jump_count >= -9:
-                    neg = 1 if self.jump_count > 0 else -1
-                    self.y -= (self.jump_count ** 2) * 0.4 * neg
-                    self.jump_count -= 1
-                else:
-                    self.is_jumping = False
-                    self.jump_count = 9
-
-            if mouse_pressed and not self.is_attack:
-                self.is_attack = True
-                self.attack_damage = False
-
-    def draw(self, wn, enemy):
-        # Hitbox del jugador
-        self.hitbox_player = Rect(self.x, self.y, config.widht_player, config.height_player)
+    def draw(self, wn):
+        #TODO: Hitbox del jugador
+        self.hitbox_player = Rect(self.x, self.y, self.widht_player, self.height_player)
         draw.rect(wn, (255, 0, 0), self.hitbox_player, 2)
 
-        self.check_dead()
-
-        # Animación de salto
-        if self.is_jumping:
-            if config.delta_x == 1:
-                wn.blit(jump_right_path[self.jump_anim_count // 3 % len(jump_right_path)], (self.x, self.y))
-            elif config.delta_x == 0:
-                wn.blit(jump_left_path[self.jump_anim_count // 3 % len(jump_left_path)], (self.x, self.y))
-            else:
-                wn.blit(jump_right_path[self.jump_anim_count // 3 % len(jump_right_path)], (self.x, self.y))
-
+        #TODO: Animación de salto
+        if self.state == PlayerState.JUMPING:
             self.jump_anim_count += 1 # Avanza la animación de salto
-
-        # Animación de ataque
-        elif self.is_attack:
-            if config.delta_x == 1:
-                config.widht_player = 42
-                wn.blit(attack_right_path[self.attack_anim_count // 5 % len(attack_right_path)], (self.x, self.y))
-            elif config.delta_x == 0:
-                config.widht_player = 42
-                wn.blit(attack_left_path[self.attack_anim_count // 5 % len(attack_left_path)], (self.x, self.y))
+            if self.facing_right:
+                anim_list = jump_right_path
             else:
-                config.widht_player = 42
-                wn.blit(attack_right_path[self.attack_anim_count // 5 % len(attack_right_path)], (self.x, self.y))
+                anim_list = jump_left_path
 
-            self.attack_anim_count += 1 # Avanza la animación de ataque
+            #! Dibujar animación de salto
+            wn.blit(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.x, self.y))
 
-            # Mantener la animación de ataque hasta que acabe
-            if self.attack_anim_count >= len(attack_right_path) * 5:
-                self.is_attack = False
-                self.attack_anim_count = 0
-                config.widht_player = 35
+        #TODO: Animación de ataque
+        elif self.state == PlayerState.ATTACKING:
+            self.widht_player = 42
+            anim_list = self.current_attack_frames
+            #! Dibujar animación de ataque
+            wn.blit(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.x, self.y))
 
-                if not self.attack_damage:
-                    self.attack_damage = True
-                    self.check_collision_enemy(enemy)
+        #TODO: Animación de momiviento
+        elif self.state == PlayerState.WALKING and not self.crouch:
+            self.widht_player = 35
+            self.height_player = 65
 
-        # Animación de muerte
-        elif self.is_death:
-            config.height_player = 35
-            config.widht_player = 65
+            if self.facing_right and not self.crouch:
+                anim_list = walk_right_path
+            elif not self.facing_right and not self.crouch:
+                anim_list = walk_left_path
+
+            #! Dibujar animación de movimiento
+            wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+
+        #TODO: Animación cuando está parado
+        elif self.state == PlayerState.IDLE:
+            self.widht_player = 35
+            self.height_player = 65
+            if self.facing_right:
+                anim_list = stand_right
+            else:
+                anim_list = stand_left
+
+            #! Dibujar animación de cuando está parado
+            wn.blit(anim_list[self.walk_count // 5 % len(anim_list)], (self.x, self.y))
+
+        #TODO: Animación de muerte
+        elif self.state == PlayerState.DEAD:
+            self.widht_player = 65
+            self.height_player = 35
             self.y = 676
+
             if self.death_count < len(dead_path) * 5:
                 if config.delta_x == 1:
                     wn.blit(dead_path[self.death_count // 5 % len(dead_path)], (self.x, self.y))
@@ -137,22 +228,30 @@ class Player:
                 if time.get_ticks() - self.death_timer > 3000:
                     pass
 
-        # Animación de movimiento
-        else:
-            config.widht_player = 35
-            config.height_enemy = 65
-            if self.moving_right:
-                wn.blit(walk_right_path[self.walk_count // 2 % len(walk_right_path)], (self.x, self.y))
-            elif self.moving_left:
-                wn.blit(walk_left_path[self.walk_count // 2 % len(walk_left_path)], (self.x, self.y))
+        #TODO: Animación de agachado moviéndose
+        elif self.state == PlayerState.WALKING and self.crouch and self.crouch_walk:
+            self.y = 676
+            if self.facing_right:
+                anim_list = crouchWalk_right
             else:
-                wn.blit(self.standing[self.walk_count // 4 % len(self.standing)], (self.x, self.y))
+                anim_list = crouchWalk_left
 
-            self.walk_count += 1
-            self.jump_anim_count = 0
+            #! Dibujar animación de movimiento agachado
+            wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+
+        #TODO: Animación de agachado
+        elif self.state == PlayerState.CROUCH:
+            self.y = 676
+
+            if self.facing_right:
+                anim_list = crouch_right
+            else:
+                anim_list = crouch_left
+
+            wn.blit(anim_list, (self.x, self.y))
 
     def barra_healt(self, wn, x, y):
-        calculo_barra = int((self.health / 100) * config.widht_healt)
+        calculo_barra = int((self.health / self.max_health) * config.widht_healt)
         borde = Rect(x, y, config.widht_healt, config.height_healt)
         rectangulo = Rect(x, y, calculo_barra, config.height_healt)
         draw.rect(wn, (255, 0, 255), rectangulo)
@@ -162,96 +261,209 @@ class Player:
         if self.health <= 0:
             self.health = 0
 
-    def check_dead(self):
-        if self.health == 0:
-            self.is_death = True
-
     def check_collision_enemy(self, enemy):
         if self.hitbox_player.colliderect(enemy.hitbox_enemy):
-            enemy.health -= self.num_hurt
+            enemy.health -= 4
             enemy.health = max(enemy.health, 0)
 
-
+#todo: Clase enemy
 class Villain:
-    def __init__(self, speed):
+
+    MOVE_GROUND = 0
+    MODE_LEVITATE = 1
+    MODE_FLY = 2
+
+    def __init__(self, health, max_health, speed, animation_paths, can_shoot=False, movement_mode=MOVE_GROUND, levitate_height=50, fly_speed_y=2):
+        # Configuración principal
         self.x = config.x_enemy
         self.y = config.y_enemy
         self.hitbox_enemy = Rect(self.x, self.y, config.width_enemy, config.height_enemy)
-        self.standing = stand_right_villain  # Imagen de pie por defecto
+        self.animations = animation_paths
+        self.standing = self.animations['idle_right']  # Imagen de pie por defecto
         self.walk_count = 0
         self.moving_right = False
         self.moving_left = False
         self.is_attack = False
         self.attack_count = 0
-        self.health = config.health_enemy
+        self.health = health
+        self.max_health = max_health
         self.dead_count = 0
         self.is_dead = False
         self.visible = True
         self.is_stand = False
         self.num_hurt = 4
         self.speed = speed
+        self.direction = 1
+        self.can_create_prj = False
+
+        # Disparo
+        self.can_shoot = can_shoot
+        self.is_shooting = False
+        self.shoot_cooldown = config.shoot_cooldown
+        self.last_shoot_time = 0
+        self.projectiles = []
+        self.prj_speed = config.prj_speed
+        self.prj_damage = config.prj_damage
+
+        # Modo de movimiento {Levitación//vuelo//correr}
+        self.mv_mode = movement_mode
+        self.lvt_height = levitate_height
+        self.fly_speed_y = fly_speed_y
+        self.target_y = self.y
+        self.ground_y = config.y_enemy
+
+        if self.mv_mode == self.MODE_LEVITATE:
+            self.y = self.ground_y - self.lvt_height
 
     def move_towards_player(self, player):
         if player.health > 0 and self.health > 0 and config.show_inventory == False:
-            if player.x > self.x:
-                self.moving_right = True
+            distance_player_x = abs(player.x - self.x)
+            distance_player_y = abs(player.y - self.y)
+            distance_player_total = math.hypot(player.x - self.x, player.y -self.y)
+
+            if self.mv_mode == self.MOVE_GROUND:
+                self.y = self.ground_y
+            elif self.mv_mode == self.MODE_LEVITATE:
+                target_y_levitate = self.ground_y - self.lvt_height
+                if self.y < target_y_levitate:
+                    self.y += min(self.fly_speed_y, target_y_levitate - self.y)
+                elif self.y > target_y_levitate:
+                    self.y -= min(self.fly_speed_y, self.y - target_y_levitate)
+            elif self.mv_mode == self.MODE_FLY:
+                if player.y > self.y:
+                    self.y += min(self.fly_speed_y, player.y - self.y)
+                elif player.y < self.y:
+                    self.y -= min(self.fly_speed_y, self.y - player.y)
+
+            if self.can_shoot and distance_player_total <= config.shooting_range:
+                self.is_attack = False
                 self.moving_left = False
-                self.is_attack = False
-                self.x += min(self.speed, player.x - self.x)
-            elif player.x < self.x:
                 self.moving_right = False
-                self.moving_left = True
-                self.is_attack = False
-                self.x -= min(self.speed, self.x - player.x)
-            else:
-                self.is_attack = True
+                self.direction = 1 if player.x > self.x else -1
+
+                current_time = time.get_ticks()
+                if current_time - self.last_shoot_time > self.shoot_cooldown and not self.is_shooting:
+                    self.is_shooting = True
+                    self.last_shoot_time = current_time
+                    self.attack_count = 0
+                    self.can_create_prj = True
+
+            elif not self.is_shooting:
+                if player.x > self.x:
+                    self.moving_right = True
+                    self.moving_left = False
+                    self.is_attack = False
+                    self.direction = 1
+                    self.x += min(self.speed, player.x - self.x)
+                elif player.x < self.x:
+                    self.moving_right = False
+                    self.moving_left = True
+                    self.is_attack = False
+                    self.direction = -1
+                    self.x -= min(self.speed, self.x - player.x)
+                else:
+                    self.moving_left = False
+                    self.moving_right = False
+                    if not self.can_shoot:
+                        self.is_attack = True
+                    else:
+                        self.is_stand = True
+                        self.direction = 1 if player.x > self.x else -1
+                        self.standing = self.animations['idle_right'] if self.direction == 1 else self.animations['idle_left']
+
         else:
             self.moving_left = False
             self.moving_right = False
             self.is_attack = False
-            self.is_stand = not self.is_attack
+            self.is_shooting = False
+            self.is_stand = True
+            if self.mv_mode != self.MOVE_GROUND:
+                self.fly_speed_y = 0
 
-    def draw(self, wn, player):
+    def draw(self, wn, player, enemy):
         if not self.visible:
             return
 
         self.hitbox_enemy = Rect(self.x, self.y, config.width_enemy, config.height_enemy)
-        draw.rect(wn, (255, 0, 0), self.hitbox_enemy, 2)
+        #draw.rect(wn, (255, 0, 0), self.hitbox_enemy, 2)
 
         if self.is_dead:
-            wn.blit(dead_right_villain[self.dead_count // config.ANIMATION_SPEED % len(dead_right_villain)], (self.x, self.y))
+            current_animation = self.animations.get('dead') if self.direction == 1 else self.animations.get('dead_left')
+            wn.blit(current_animation[self.dead_count // config.ANIMATION_SPEED % len(current_animation)], (self.x, self.y))
             self.dead_count += 1
-            if self.dead_count >= len(dead_right_villain) * config.ANIMATION_SPEED:
+            if self.dead_count >= len(current_animation) * config.ANIMATION_SPEED:
                 self.visible = False
             return
 
-        if self.is_attack:
-            wn.blit(attack_right_villain[self.attack_count // config.ANIMATION_SPEED % len(attack_right_villain)], (self.x, self.y))
+        elif self.is_shooting:
+            current_animation = self.animations.get('shoot_right') if self.direction == 1 else self.animations.get('shoot_left')
+            if current_animation:
+                wn.blit(current_animation[self.attack_count // config.ANIMATION_SPEED % len(current_animation)], (self.x, self.y))
+                self.attack_count += 1
+
+                if self.attack_count // config.ANIMATION_SPEED ==  (len(current_animation) - 1) and self.can_create_prj:
+                    self.projectiles.append(Projectile(
+                        self.x + config.width_enemy // 2,
+                        self.y + config.height_enemy // 2,
+                        player.x + config.widht_player // 2,
+                        player.y + config.height_player // 2,
+                        self.prj_speed,
+                        self.prj_damage,
+                        self.animations.get('prj_right') if self.direction == 1 else self.animations.get('prj_left')
+                    ))
+                    self.can_create_prj = False
+
+                if self.attack_count >= len(current_animation) * config.ANIMATION_SPEED:
+                    self.is_shooting = False
+                    self.attack_count = 0
+            else:
+                self.is_shooting = False
+                self.attack_count = 0
+
+        elif self.is_attack:
+            current_animation = self.animations['attack_right'] if self.moving_right or not self.moving_left else self.animations['attack_left']
+            wn.blit(current_animation[self.attack_count // config.ANIMATION_SPEED % len(current_animation)], (self.x, self.y))
             self.attack_count += 1
 
-            if self.attack_count >= len(attack_right_villain) * 6:
+            if self.attack_count >= len(current_animation) * 6:
                 self.attack_count = 0
                 self.check_collision_hero(player)
 
-        elif self.moving_right:
-            wn.blit(run_right_villain[self.walk_count // config.ANIMATION_SPEED % len(run_right_villain)], (self.x, self.y))
-
-        elif self.moving_left:
-            wn.blit(run_left_villain[self.walk_count // config.ANIMATION_SPEED % len(run_left_villain)], (self.x, self.y))
-
+        elif self.moving_right or self.moving_left:
+            if self.mv_mode == self.MOVE_GROUND:
+                current_animation = self.animations['run_right'] if self.direction == 1 else self.animations['run_left']
+            elif self.mv_mode != self.MOVE_GROUND:
+                current_animation = self.animations.get('fly_right', self.animations['idle_right']) if self.direction == 1 else self.animations.get('fly_left', self.animations['idle_left'])
+            wn.blit(current_animation[self.walk_count // config.ANIMATION_SPEED % len(current_animation)], (self.x, self.y))
         else:
-            wn.blit(self.standing[self.walk_count // config.ANIMATION_SPEED % len(self.standing)], (self.x, self.y))
+            if self.mv_mode == self.MOVE_GROUND:
+                current_animation = self.standing
+            elif self.mv_mode != self.MOVE_GROUND:
+                current_animation = self.animations.get('idle_right', self.standing) if self.direction == 1 else self.animations.get('idle_left', self.standing)
+            wn.blit(current_animation[self.walk_count // config.ANIMATION_SPEED % len(current_animation)], (self.x, self.y))
 
         self.walk_count += 1
 
+        for projectile in list(self.projectiles):
+            projectile.update(player, enemy)
+            projectile.draw(wn)
+            projectile.can_damage_player(player)
+
+            if not projectile.visible:
+                self.projectiles.remove(projectile)
+
     def draw_health_bar(self, wn):
         if self.visible:
-            health_ratio = max(self.health / 120, 0)  # Evitar valores negativos
+            health_x = self.x + (config.width_enemy - config.width_health_enemy) // 2
+            health_y = self.y - 15
+            health_ratio = max(self.health / self.max_health, 0)
             health_width = int(health_ratio * config.width_health_enemy)
             health_bar = Rect(self.x + 15, self.y - 5, health_width, config.height_health_enemy)
             draw.rect(wn, (255, 0, 255), health_bar)
             health_text = config.fuente.render(f"Vida: {self.health}", True, config.text_color)
-            wn.blit(health_text, (self.x - 8, self.y - 25))
+            text_x = self.x + (config.width_enemy - health_text.get_width()) / 2
+            text_y = self.y - 35
+            wn.blit(health_text, (text_x, text_y))
             if self.health <= 0:
                 self.health = 0
                 self.is_dead = True
@@ -259,3 +471,59 @@ class Villain:
     def check_collision_hero(self, player):
         if self.hitbox_enemy.colliderect(player.hitbox_player):
             player.health -= self.num_hurt
+
+#todo: Clase proyectil
+class Projectile:
+    def __init__(self, x, y, target_X, target_y, speed, damage, animation_frames):
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.damage = damage
+        self.animation_frames = animation_frames
+        self.current_frame = 0
+        self.visible = True
+        self.reflected = False
+        delta_x = target_X - self.x
+        delta_y = target_y - self.y
+        distance = math.hypot(delta_x, delta_y)
+
+        if distance == 0:
+            self.dx = 0
+            self.dy = 0
+            self.visible = False
+        else:
+            self.dx = (delta_x / distance) * self.speed
+            self.dy = (delta_y / distance) * self.speed
+
+        self.rect = self.animation_frames[0].get_rect(center=(self.x, self.y))
+
+    def update(self, hero, enemy):
+        self.x += self.dx
+        self.y += self.dy
+
+        self.rect.center = (self.x, self.y)
+        self.current_frame = (self.current_frame + 1) % len(self.animation_frames)
+
+        # Si el proyectil sale de la pantalla, lo hacemos invisible
+        if self.x < -50 or self.x > config.WIDHT + 50 or self.y < -50 or self.y > config.HEIGHT + 50: # Asumiendo config.WIDTH existe
+            self.visible = False
+            return
+
+        if not self.reflected and hero.state == PlayerState.ATTACKING and self.rect.colliderect(hero.hitbox_player):
+            self.dx *= -1
+            self.dy *= -1
+            self.reflected = True
+
+        if self.reflected and self.rect.colliderect(enemy.hitbox_enemy):
+            enemy.health -= self.damage
+            self.visible = False
+
+    def can_damage_player(self, player):
+        if player.state != PlayerState.ATTACKING and self.visible and self.rect.colliderect(player.hitbox_player):
+            player.health -= self.damage
+            self.visible = False
+
+
+    def draw(self, wn):
+        if self.visible:
+            wn.blit(self.animation_frames[self.current_frame], self.rect.topleft)

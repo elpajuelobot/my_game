@@ -4,6 +4,9 @@ pygame.init()
 
 class Variables:
     def __init__(self):
+        # Fuente principal
+        fuente = "assets\\fonts\\OCRAEXT.TTF"
+
         # Ajustes de la pantalla de juego
         self.WIDHT = 1024
         self.HEIGHT = 768
@@ -11,7 +14,6 @@ class Variables:
         self.bg_y = 0
         self.speed_background = 5
         self.x_relativa = self.bg_x % self.WIDHT
-
 
         # Ajustes de jugador
         self.widht_player = 35
@@ -27,9 +29,16 @@ class Variables:
         self.width_enemy = 43
         self.height_enemy = 82
         self.x_enemy = 612
-        self.y_enemy = 634
+        self.y_enemy = 635
         self.health_enemy = 10
         self.ANIMATION_SPEED = 6
+        self.shoot_cooldown = 2000
+        # Proyectil del villano
+        self.prj_speed = 7
+        self.prj_damage = 4
+        self.prj_width = 30
+        self.prj_height = 30
+        self.shooting_range = 500
 
         # Barra de vida
         # Heroe
@@ -42,6 +51,7 @@ class Variables:
 
         # texto
         self.fuente = pygame.font.Font(None, 30)
+        self.text_level_font = pygame.font.Font(fuente, 120)
         self.text_color = (255, 255, 255)
 
         # Mantener ventanas abiertas
@@ -76,9 +86,18 @@ class Variables:
         self.inv_y = self.HEIGHT // 2
         self.GRAY = (169, 169, 169)
         self.BLACK = (0, 0, 0)
-        self.font_inventary = pygame.font.Font(None, 19)
+        self.font_inventary = pygame.font.Font(fuente, 19)
 
         # Objetos
         self.take_object = False
+
+        # Portales
+        self.width_portal = 75
+        self.height_portal = 75
+
+        # Delay
+        self.delay_inicial = 3000
+        self.delay_final = 1000
+
 
 config = Variables()

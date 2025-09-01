@@ -24,13 +24,12 @@ def recortar_sprites(imagen_path, salida_dir, num_sprites):
         bbox = frame.getbbox()
         if bbox:
             sprite_recortado = frame.crop(bbox)
-            nombre_archivo = f"_CrouchWalk_{i + 1}.png"
+            nombre_archivo = f"tecla_{i + 1}.png"
             sprite_recortado.save(os.path.join(salida_dir, nombre_archivo))
             print(f"Guardado: {nombre_archivo}")
 
-# Ejemplo de uso
-ruta_imagen = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\players\\hero\\complete\\_CrouchWalk.png"
-carpeta_salida = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\players\\hero\\derecha"
+ruta_imagen = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\Keyboard_file_1"
+carpeta_salida = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados"
 numero_de_sprites = 8
 
 recortar_sprites(ruta_imagen, carpeta_salida, numero_de_sprites)

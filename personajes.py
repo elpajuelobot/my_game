@@ -28,10 +28,14 @@ class Player:
         self.crouch_walk = False
         self.walk_count = 0
         self.crouch_count = 0
+        self.dx = 0
 
         #TODO: Salto
-        self.jump_count = 9
-        self.jump_anim_count = 0 # Contador de animación de salto
+        self.jump_anim_count = 0
+        self.dy = 0  # Velocidad vertical del jugador
+        self.gravity = 0.5  # Fuerza de la gravedad
+        self.jump_strength = -10  # Fuerza del salto hacia arriba
+        self.on_ground = False
 
         #TODO: Ataque
         self.attack_anim_count = 0 # Contador de animación de ataque
@@ -45,12 +49,12 @@ class Player:
         self.death_count = 0
         self.death_timer = 0
 
-        #TODO: Dimensiones (mejoras aquí pronto)
+        #TODO: Dimensiones
         self.widht_player = 35
         self.height_player = 65
         self.hitbox_player = Rect(self.x, self.y, self.widht_player, self.height_player)
 
-    def update(self, keys_pressed, moused_pressed, enemy, can_move, last_key):
+    def update(self, keys_pressed, moused_pressed, can_move, last_key, collision_rects, enemy=None):
         last_key = key.name(last_key)
         if not can_move:
             return
@@ -63,57 +67,89 @@ class Player:
             return
 
         #TODO: Movimiento horizontal
-        if not keys_pressed[K_s]:
-            self.crouch = False
-            self.crouch_walk = False
-        if not keys_pressed[K_s] and self.state != PlayerState.JUMPING:
-            self.y = self.base_y
-
+        self.dx = 0  # Reinicia la velocidad horizontal en cada fotograma
         is_moving = False
 
-        if keys_pressed[K_s] and keys_pressed[K_d] and self.x < 990:
+        if keys_pressed[K_s] and keys_pressed[K_d] and self.hitbox_player.x < 990:
+            self.dx = config.speed_player
             self.crouch = True
             self.crouch_walk = True
-            self.x += config.speed_player
             self.facing_right = True
             is_moving = True
 
-        elif keys_pressed[K_s] and keys_pressed[K_a] and self.x > 3:
+        elif keys_pressed[K_s] and keys_pressed[K_a] and self.hitbox_player.x > 3:
+            self.dx = -config.speed_player
             self.crouch = True
             self.crouch_walk = True
-            self.x -= config.speed_player
             self.facing_right = False
             is_moving = True
 
         elif keys_pressed[K_s]:
             self.crouch = True
             self.crouch_walk = False
-            if last_key == "d":
-                self.facing_right = True
-            elif last_key == "a":
-                self.facing_right = False
             is_moving = False
 
-        if keys_pressed[K_d] and self.x < 990:
-            self.x += config.speed_player
+        elif keys_pressed[K_w]:
+            self.crouch = False
+            self.crouch_walk = False
+            is_moving = False
+
+        elif keys_pressed[K_d] and self.hitbox_player.x < 990:
+            self.dx = config.speed_player
+            self.crouch = False
+            self.crouch_walk = False
             self.facing_right = True
             is_moving = True
 
-        elif keys_pressed[K_a] and self.x > 3:
-            self.x -= config.speed_player
+        elif keys_pressed[K_a] and self.hitbox_player.x > 3:
+            self.dx = -config.speed_player
+            self.crouch = False
+            self.crouch_walk = False
             self.facing_right = False
             is_moving = True
 
+        #TODO: Lógica de salto y gravedad
+        self.dy += self.gravity
+
+        if keys_pressed[K_SPACE] and self.on_ground:
+            self.dy = self.jump_strength
+            self.on_ground = False
+            self.state = PlayerState.JUMPING
+
+        #TODO: Detección de colisiones verticales y horizontales
+        #! Horizontales
+        self.hitbox_player.x += self.dx
+        for rect in collision_rects:
+            if self.hitbox_player.colliderect(rect):
+                if self.dx > 0:  # Moviéndose a la derecha
+                    self.hitbox_player.right = rect.left
+                if self.dx < 0:  # Moviéndose a la izquierda
+                    self.hitbox_player.left = rect.right
+                # Lógica de escalada: si el jugador colisiona y está en el suelo.
+                if self.on_ground:
+                    self.hitbox_player.y -= 10
+                    self.dy = 0 # Detiene la caída al subir un escalón.
+
+        #! Verticales
+        self.hitbox_player.y += self.dy
+        self.on_ground = False
+        for rect in collision_rects:
+            if self.hitbox_player.colliderect(rect):
+                if self.dy > 0:
+                    self.hitbox_player.bottom = rect.top
+                    self.dy = 0
+                    self.on_ground = True
+
+                    if self.state == PlayerState.JUMPING:
+                        self.state = PlayerState.IDLE
+
+                if self.dy < 0:
+                    self.hitbox_player.top = rect.bottom
+                    self.dy = 0
 
         #! Transiciones de estado
-
-        #TODO: Transición a saltar
-        if self.state in [PlayerState.IDLE, PlayerState.WALKING] and keys_pressed[K_SPACE]:
-            self.state = PlayerState.JUMPING
-            self.jump_count = 9
-
         #TODO: Transición a atacar
-        elif self.state in [PlayerState.IDLE, PlayerState.WALKING] and moused_pressed:
+        if self.state in [PlayerState.IDLE, PlayerState.WALKING] and moused_pressed:
             self.state = PlayerState.ATTACKING
             self.attack_anim_count = 0
             self.attack_damage_applied = False
@@ -124,21 +160,14 @@ class Player:
             else:
                 self.current_attack_frames = attack_left_combo_path
 
-        #TODO: Si está saltando
-        if self.state == PlayerState.JUMPING:
-            neg = 1 if self.jump_count > 0 else -1
-            self.y -= (self.jump_count ** 2) * 0.4 * neg
-            self.jump_count -= 1
-            if self.jump_count < -9:
-                self.state = PlayerState.IDLE
-
         #TODO: Si está atacando
         elif self.state == PlayerState.ATTACKING:
             self.attack_anim_count += 1
 
             #! Aplicar daño
             if self.attack_anim_count // 5 >= len(self.current_attack_frames) // 2 and not self.attack_damage_applied:
-                self.check_collision_enemy(enemy)
+                if enemy:
+                    self.check_collision_enemy(enemy)
                 self.attack_damage_applied = True
 
             #! Una vez acabada
@@ -155,9 +184,24 @@ class Player:
                 self.state = PlayerState.IDLE
             self.walk_count += 1
 
+        self.x = self.hitbox_player.x
+        self.y = self.hitbox_player.y
+
     def draw(self, wn):
         #TODO: Hitbox del jugador
-        self.hitbox_player = Rect(self.x, self.y, self.widht_player, self.height_player)
+        current_width = self.widht_player
+        current_height = self.height_player
+
+        # Ajuste para la posición agachada
+        if self.state == PlayerState.CROUCH or self.state == PlayerState.WALKING and self.crouch and self.crouch_walk:
+            current_width = self.widht_player
+            current_height = int(self.height_player * 0.5)
+            crouch_y = self.base_y + (self.height_player - current_height)
+            self.hitbox_player = Rect(self.x, crouch_y, current_width, current_height)
+        else:
+            self.hitbox_player = Rect(self.x, self.base_y, self.widht_player, self.height_player)
+            self.y = self.base_y
+
         draw.rect(wn, (255, 0, 0), self.hitbox_player, 2)
 
         #TODO: Animación de salto
@@ -169,19 +213,20 @@ class Player:
                 anim_list = jump_left_path
 
             #! Dibujar animación de salto
-            wn.blit(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.x, self.y))
+            #?wn.blit(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.x, self.y))
+            current_frame = transform.scale(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.widht_player, self.height_player))
+            wn.blit(current_frame, (self.x, self.y))
 
         #TODO: Animación de ataque
         elif self.state == PlayerState.ATTACKING:
-            self.widht_player = 42
             anim_list = self.current_attack_frames
             #! Dibujar animación de ataque
-            wn.blit(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.x, self.y))
+            #?wn.blit(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.x, self.y))
+            current_frame = transform.scale(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.widht_player, self.height_player))
+            wn.blit(current_frame, (self.x, self.y))
 
         #TODO: Animación de momiviento
         elif self.state == PlayerState.WALKING and not self.crouch:
-            self.widht_player = 35
-            self.height_player = 65
 
             if self.facing_right and not self.crouch:
                 anim_list = walk_right_path
@@ -189,19 +234,21 @@ class Player:
                 anim_list = walk_left_path
 
             #! Dibujar animación de movimiento
-            wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+            #?wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+            current_frame = transform.scale(anim_list[self.walk_count // 2 % len(anim_list)], (self.widht_player, self.height_player))
+            wn.blit(current_frame, (self.x, self.y))
 
         #TODO: Animación cuando está parado
         elif self.state == PlayerState.IDLE:
-            self.widht_player = 35
-            self.height_player = 65
             if self.facing_right:
                 anim_list = stand_right
             else:
                 anim_list = stand_left
 
             #! Dibujar animación de cuando está parado
-            wn.blit(anim_list[self.walk_count // 5 % len(anim_list)], (self.x, self.y))
+            #?wn.blit(anim_list[self.walk_count // 5 % len(anim_list)], (self.x, self.y))
+            current_frame = transform.scale(anim_list[self.walk_count // 5 % len(anim_list)], (self.widht_player, self.height_player))
+            wn.blit(current_frame, (self.x, self.y))
 
         #TODO: Animación de muerte
         elif self.state == PlayerState.DEAD:
@@ -211,10 +258,13 @@ class Player:
 
             if self.death_count < len(dead_path) * 5:
                 if config.delta_x == 1:
-                    wn.blit(dead_path[self.death_count // 5 % len(dead_path)], (self.x, self.y))
+                    #?wn.blit(dead_path[self.death_count // 5 % len(dead_path)], (self.x, self.y))
+                    current_frame = transform.scale(dead_path[self.death_count // 5 % len(dead_path)], (self.widht_player, self.height_player))
                 else:
-                    wn.blit(dead_left_path[self.death_count // 5 % len(dead_left_path)], (self.x, self.y))
+                    #?wn.blit(dead_left_path[self.death_count // 5 % len(dead_left_path)], (self.x, self.y))
+                    current_frame = transform.scale(dead_left_path[self.death_count // 5 % len(dead_left_path)], (self.widht_player, self.height_player))
 
+                wn.blit(current_frame, (self.x, self.y))
                 self.death_count += 1
 
             else:
@@ -230,25 +280,26 @@ class Player:
 
         #TODO: Animación de agachado moviéndose
         elif self.state == PlayerState.WALKING and self.crouch and self.crouch_walk:
-            self.y = 676
             if self.facing_right:
                 anim_list = crouchWalk_right
             else:
                 anim_list = crouchWalk_left
 
             #! Dibujar animación de movimiento agachado
-            wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+            #?wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
+            current_frame = transform.scale(anim_list[self.walk_count // 2 % len(anim_list)], (current_width, current_height))
+            wn.blit(current_frame, (self.x, self.y))
 
         #TODO: Animación de agachado
         elif self.state == PlayerState.CROUCH:
-            self.y = 676
-
             if self.facing_right:
                 anim_list = crouch_right
             else:
                 anim_list = crouch_left
 
-            wn.blit(anim_list, (self.x, self.y))
+            #?wn.blit(anim_list, (self.x, self.y))
+            current_frame = transform.scale(anim_list, (current_width, current_height))
+            wn.blit(current_frame, (self.x, self.y))
 
     def barra_healt(self, wn, x, y):
         calculo_barra = int((self.health / self.max_health) * config.widht_healt)
@@ -265,6 +316,14 @@ class Player:
         if self.hitbox_player.colliderect(enemy.hitbox_enemy):
             enemy.health -= 4
             enemy.health = max(enemy.health, 0)
+
+    def set_size(self, widht, height):
+        print(f"\nwidht_player: {self.widht_player} | height_player: {self.height_player}")
+        self.widht_player = widht
+        self.height_player = height
+        print(f"\nx: {self.x} | y: {self.y}")
+        self.hitbox_player = Rect(self.x, self.y, self.widht_player, self.height_player)
+        print(f"\nwidht_player: {self.widht_player} | height_player: {self.height_player}")
 
 #todo: Clase enemy
 class Villain:

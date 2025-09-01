@@ -54,5 +54,58 @@
                 "duracion": 5
             }
         ]
+    },
+    "level3": {
+        "intro":[
+            {
+                "personaje": "anciano",
+                "texto": "Estoy impresionado muchacho, pasemos ya por fin a la última prueba.",
+                "duracion": 5
+            },
+            {
+                "personaje": "caballero",
+                "texto": "Estoy listo para lo que sea. ¿En qué consiste esta última prueba?",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "Esta es tu última prueba antes de poder entrar al castillo y empezar tú viaje.",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "Deberás derrotar a este astuto caballero proveniente del reino de las sombras",
+                "duracion": 5
+            }
+        ],
+        "ending_win":[
+            {
+                "personaje": "anciano",
+                "texto": "Exelente, has superado tu última prueba.",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "Ya estás preparado para poder conocer a su realeza y empezar vuestro viaje. Mucha suerte",
+                "duracion": 5
+            },
+            {
+                "personaje": "caballero",
+                "texto": "¿Nos volveremos a ver?",
+                "duracion": 5
+            },
+            {
+                "personaje": "anciano",
+                "texto": "El destino responderá tu pregunta...",
+                "duracion": 5
+            }
+        ],
+        "ending_lose": [
+            {
+                "personaje": "anciano",
+                "texto": "¡Por poco! Esfuérzate al máximo, es tu última prueba.",
+                "duracion": 5
+            }
+        ]
     }
 }

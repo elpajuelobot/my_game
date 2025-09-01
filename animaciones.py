@@ -93,6 +93,16 @@ def villain(name, width, height):
         animations['prj_right'] = [transform.scale(image.load(f'assets/img/players/villian/Wizard/Wizard_prj_{i}.png'), (config.prj_width, config.prj_height)) for i in range(0, 1)]
         animations['prj_left'] = [transform.scale(image.load(f'assets/img/players/villian/Wizard/left_Wizard_prj_{i}.png'), (config.prj_width, config.prj_height)) for i in range(0, 1)]
 
+    elif name == "Knight":
+        animations['idle_right'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/KnightIdle_{i}.png'), (width, height)) for i in range(1, 15)]
+        animations['idle_left'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/left_KnightIdle_{i}.png'), (width, height)) for i in range(1, 15)]
+        animations['dead'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/KnightDeath_{i}.png'), (width, height)) for i in range(1, 15)]
+        animations['dead_left'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/left_KnightDeath_{i}.png'), (width, height)) for i in range(1, 15)]
+        animations['run_right'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/KnightRun_{i}.png'), (width, height)) for i in range(1, 8)]
+        animations['run_left'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/left_KnightRun_{i}.png'), (width, height)) for i in range(1, 8)]
+        animations['attack_right'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/KnightAttack_{i}.png') ,(width, height)) for i in range(1, 22)]
+        animations['attack_left'] = [transform.scale(image.load(f'assets/img/players/villian/Knight/left_KnightAttack_{i}.png'), (width, height)) for i in range(1, 22)]
+
     return animations
 
 # Cargar imágenes de los objetos
@@ -101,3 +111,14 @@ coin = transform.scale(image.load("assets/img/objetos/Kyrise's 16x16 RPG Icon Pa
 
 # efectos
 red_portal = [transform.scale(image.load(f'C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\effects\\portal_rojo_{i}.png'), (config.width_portal, config.height_portal)) for i in range(1, 61)]
+
+def teclado():
+    teclas_image = {}
+
+    teclas_image['tecla_e'] = transform.scale(image.load("C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados\\Key_e.png"), (config.widht_key_image, config.height_key_image))
+    teclas_image['tecla_e_pressed'] = transform.scale(image.load("C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados\\Key_pressed_e.png"), (config.widht_key_image, config.height_key_image))
+
+    teclas_image['tecla_w'] = transform.scale(image.load("C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados\\Key_w.png"), (config.widht_key_image, config.height_key_image))
+    teclas_image['tecla_w_pressed'] = transform.scale(image.load("C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados\\Key_pressed_w.png"), (config.widht_key_image, config.height_key_image))
+
+    return teclas_image

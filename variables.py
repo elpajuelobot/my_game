@@ -99,5 +99,9 @@ class Variables:
         self.delay_inicial = 3000
         self.delay_final = 1000
 
+        # Imágenes del teclado
+        self.widht_key_image = 50
+        self.height_key_image = 50
+
 
 config = Variables()

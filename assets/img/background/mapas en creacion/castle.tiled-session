@@ -1,0 +1,55 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map_castle_interior_final_version.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "castle_interior.tsx": {
+            "scaleInDock": 1.5,
+            "scaleInEditor": 1
+        },
+        "map_castle_interior.tmx": {
+            "scale": 1.0390625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 522.1052631578947,
+                "y": 383.99999999999994
+            }
+        },
+        "map_castle_interior_final_version.tmx": {
+            "scale": 1,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 536.5,
+                "y": 409
+            }
+        }
+    },
+    "last.imagePath": "C:/Users/elpaj/Documents/my_game/assets/img/background/mapas en creacion",
+    "map.height": 48,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 64,
+    "openFiles": [
+        "map_castle_interior_final_version.tmx",
+        "castle_interior.tsx"
+    ],
+    "project": "castle.tiled-project",
+    "recentFiles": [
+        "castle_interior.tsx",
+        "map_castle_interior_final_version.tmx",
+        "map_castle_interior.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    },
+    "tileset.transparentColor": "#000000",
+    "tileset.useTransparentColor": true
+}

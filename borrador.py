@@ -1,171 +1,123 @@
-import sys
+import pygame
+import pytmx
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pygame import *
 from variables import config
-from personajes import Player, Villain
-from random import randint
-from objetos import Item, get_cell_from_mouse, draw_inventory, add_to_inventory, inventory
-from animaciones import healt_potion, coin, dead_path, villain
-from cinematicas.cinematicas import reproducir_cinematica
-from menu_pausa import menu_pausa
 
-def level2():
-    wn = display.set_mode((config.WIDHT, config.HEIGHT))
-    display.set_caption("El caballero - Nivel 2")
-    background = transform.scale(image.load("assets/img/background/area juego/background.png").convert(), (1024, 768))
+# --- 1. Inicializar Pygame y configuración de la ventana ---
+pygame.init()
+ANCHO_PANTALLA = config.WIDHT
+ALTO_PANTALLA = config.HEIGHT
+screen = pygame.display.set_mode((ANCHO_PANTALLA, ALTO_PANTALLA))
+pygame.display.set_caption("Juego con Colisiones y Salto")
 
-    reproducir_cinematica(wn, "level1", "intro")
+# --- 2. Cargar el mapa y los rectángulos de colisión ---
+# Asegúrate de que la ruta a tu archivo .tmx sea correcta
+try:
+    tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_final_version.tmx")
+except FileNotFoundError:
+    print("Error: No se encontró el archivo de mapa. Asegúrate de que la ruta sea correcta.")
+    pygame.quit()
+    exit()
 
-    level_complete = False
-    while not level_complete:
-        hero = Player(5, config.y_player, config.healt_player, 10)
-        enemy = Villain(config.health_enemy, 10, randint(2, 4), villain("NightBorne", config.width_enemy, config.height_enemy))  # Enemigo más fuerte
+# Información del mapa para dibujar
+ANCHO_TILE = tmx_data.tilewidth
+ALTO_TILE = tmx_data.tileheight
 
-        player_won = False
-        mostrar_cine = True
-        internal_game = True
-        can_move = False
-        font_countdown = config.text_level_font
-        last_key = 0
+# Cargar los rectángulos de colisión de la capa de objetos
+collision_rects = []
+print("Capas encontradas en el mapa:")
+for layer in tmx_data.layers:
+    print(f"- {layer.name}")
+    if layer.name == "colisiones":
+        for obj in layer:
+            obj_y_corregida = tmx_data.height * tmx_data.tileheight - obj.y - obj.height
+            collision_rects.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
-        # Tiempo de espera
-        start_time = time.get_ticks()
+print(f"\nNúmero de rectángulos de colisión cargados: {len(collision_rects)}")
 
-        while internal_game:
-            keys_pressed = key.get_pressed()
-            config.clock.tick(config.FPS)
+# --- 3. Personaje (ahora un cuadrado) ---
+player_rect = pygame.Rect(100, 100, 32, 32)
+player_color = (255, 0, 0) # Rojo
 
-            # Tiempo de espera
-            current_time = time.get_ticks()
-            if current_time - start_time >= config.delay_inicial:
-                can_move = True
+# Variables de movimiento
+player_speed = 4
+gravity = 0.5
+jump_strength = -10
+dy = 0 # Velocidad vertical
+on_ground = False
 
-            for e in event.get():
-                if e.type == QUIT:
-                    config.game = False
-                    internal_game = False
-                    level_complete = True
-                    mostrar_cine = False
+# --- 4. Funciones de dibujo ---
+def draw_map():
+    for layer in tmx_data.visible_layers:
+        if isinstance(layer, pytmx.TiledTileLayer):
+            for x, y, gid in layer:
+                tile_image = tmx_data.get_tile_image_by_gid(gid)
+                if tile_image:
+                    screen.blit(tile_image, (x * ANCHO_TILE, y * ALTO_TILE))
 
-                elif e.type == KEYDOWN:
-                    last_key = e.key
 
-                elif e.type == KEYDOWN and e.key == K_ESCAPE:
-                    resultado = menu_pausa(wn)
-                    if resultado == "menu_principal":
-                        config.menu_principal = True
-                        config.game = False
-                        internal_game = False
-                        level_complete = True
+# --- 5. Bucle principal del juego ---
+clock = pygame.time.Clock()
+running = True
 
-                elif e.type == MOUSEBUTTONDOWN:
-                    if e.button == 1:
-                        config.mouse_pressed = True
-                elif e.type == MOUSEBUTTONUP:
-                    if e.button == 1:
-                        config.mouse_pressed = False
+while running:
+    # --- Manejo de eventos ---
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and on_ground:
+                dy = jump_strength
+                on_ground = False
 
-                if hero.health > 0:
-                    if e.type == KEYDOWN and e.key == K_e:
-                        config.show_inventory = not config.show_inventory
-                        config.dragging = False
-                        config.dragged_item = None
+    # --- 6. Lógica de movimiento ---
+    keys = pygame.key.get_pressed()
+    dx = 0
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+        dx = -player_speed
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        dx = player_speed
 
-                if config.show_inventory:
-                    if e.type == MOUSEBUTTONDOWN:
-                        cell = get_cell_from_mouse(e.pos)
-                        if cell:
-                            row, col = cell
-                            if inventory[row][col]:
-                                config.dragging = True
-                                config.dragged_item = inventory[row][col].copy()
-                                inventory[row][col] = None
+    # Aplicar gravedad
+    dy += gravity
 
-                    elif e.type == MOUSEBUTTONUP:
-                        if config.dragging:
-                            cell = get_cell_from_mouse(e.pos)
-                            if cell:
-                                row, col = cell
-                                if inventory[row][col] is None:
-                                    inventory[row][col] = config.dragged_item
-                                else:
-                                    if inventory[row][col]["name"] == config.dragged_item["name"]:
-                                        inventory[row][col]["quantity"] += config.dragged_item["quantity"]
-                                    else:
-                                        if inventory[row][col] != config.dragged_item:
-                                            inventory[row][col], config.dragged_item = config.dragged_item, inventory[row][col]
-                            config.dragging = False
-                            config.dragged_item = None
+    # --- 7. Detección y respuesta a colisiones (horizontal y vertical) ---
 
-            wn.blit(background, (config.bg_x, config.bg_y))
+    # Colisiones horizontales
+    player_rect.x += dx
+    for rect in collision_rects:
+        if player_rect.colliderect(rect):
+            if dx > 0:  # Moviéndose a la derecha
+                player_rect.right = rect.left
+            if dx < 0:  # Moviéndose a la izquierda
+                player_rect.left = rect.right
 
-            hero.update(keys_pressed, config.mouse_pressed, enemy, can_move, last_key)
-            hero.draw(wn)
-            hero.barra_healt(wn, 3, 4)
+            # Lógica de escalada: Si el jugador colisiona y está subiendo
+            # Mueve al jugador hacia arriba para que "salte" al siguiente escalón
+            # El valor 10 es un ajuste que puedes cambiar para que se sienta bien
+            if on_ground:
+                player_rect.y -= 10
+                dy = 0 # No está cayendo si está escalando
 
-            enemy.draw(wn, hero, enemy)
-            if can_move:
-                enemy.move_towards_player(hero)
-            enemy.draw_health_bar(wn)
+    # Colisiones verticales
+    on_ground = False
+    player_rect.y += dy
+    for rect in collision_rects:
+        if player_rect.colliderect(rect):
+            if dy > 0:
+                player_rect.bottom = rect.top
+                dy = 0
+                on_ground = True
+            if dy < 0:
+                player_rect.top = rect.bottom
+                dy = 0
 
-            if config.show_inventory:
-                draw_inventory(wn)
-                if config.dragging and config.dragged_item:
-                    wn.blit(healt_potion, mouse.get_pos())
+    # --- 8. Actualizar pantalla y dibujar ---
+    screen.fill((0, 0, 0))
+    draw_map()
+    pygame.draw.rect(screen, player_color, player_rect)
+    pygame.display.flip()
+    clock.tick(60)
 
-            if enemy.health <= 0:
-                enemy.is_dead = True
-
-            if enemy.is_dead and not enemy.visible:
-                player_won = True
-                internal_game = False
-
-            if hero.health <= 0:
-                hero.is_death = True
-                if hero.death_count >= len(dead_path) * 5 and hero.death_timer != 0 and time.get_ticks() - hero.death_timer > 3000:
-                    player_won = False
-                    internal_game = False
-
-            # Cuenta atrás inicial
-            elapsed = time.get_ticks() - start_time
-            remaining = max(0, (config.delay_inicial - elapsed) // 1000 + 1)
-
-            if remaining > 0:
-                countdown_text = font_countdown.render(str(remaining), True, config.text_color)
-                rect = countdown_text.get_rect(center=(config.WIDHT // 2, config.HEIGHT // 2))
-                wn.blit(countdown_text, rect)
-            else:
-                can_move = True
-
-            display.update()
-
-        end_time = time.get_ticks()
-        while time.get_ticks() - end_time < config.delay_final:
-            config.clock.tick(config.FPS)
-            for e in event.get():
-                if e.type == QUIT:
-                    config.game = False
-                    return
-
-            wn.blit(background, (config.bg_x, config.bg_y))
-            hero.draw(wn)
-            hero.barra_healt(wn, 3, 4)
-            enemy.draw(wn, hero, enemy)
-            enemy.draw_health_bar(wn)
-
-            display.update()
-
-        if not config.game:
-            break
-
-        if mostrar_cine:
-            if player_won:
-                reproducir_cinematica(wn, "level1", "ending_win")
-            else:
-                reproducir_cinematica(wn, "level1", "ending_lose")
-
-        if player_won:
-            level_complete = True
-
-level2()
+# --- 9. Salir del juego ---
+pygame.quit()

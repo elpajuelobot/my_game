@@ -9,6 +9,7 @@ from objetos import Item, get_cell_from_mouse, draw_inventory, add_to_inventory,
 from animaciones import healt_potion, coin, dead_path, villain
 from cinematicas.cinematicas import reproducir_cinematica
 from menu_pausa import menu_pausa
+from niveles.level3 import level3
 
 def level2():
     wn = display.set_mode((config.WIDHT, config.HEIGHT))
@@ -16,6 +17,9 @@ def level2():
     background = transform.scale(image.load("assets/img/background/area juego/background.png").convert(), (1024, 768))
 
     reproducir_cinematica(wn, "level2", "intro")
+
+    suelo_rect = Rect(0, config.HEIGHT - 50, config.WIDHT, 50)
+    collision_rects = [suelo_rect]
 
     level_complete = False
     while not level_complete:
@@ -68,41 +72,9 @@ def level2():
                     if e.button == 1:
                         config.mouse_pressed = False
 
-                if hero.health > 0:
-                    if e.type == KEYDOWN and e.key == K_e:
-                        config.show_inventory = not config.show_inventory
-                        config.dragging = False
-                        config.dragged_item = None
-
-                if config.show_inventory:
-                    if e.type == MOUSEBUTTONDOWN:
-                        cell = get_cell_from_mouse(e.pos)
-                        if cell:
-                            row, col = cell
-                            if inventory[row][col]:
-                                config.dragging = True
-                                config.dragged_item = inventory[row][col].copy()
-                                inventory[row][col] = None
-
-                    elif e.type == MOUSEBUTTONUP:
-                        if config.dragging:
-                            cell = get_cell_from_mouse(e.pos)
-                            if cell:
-                                row, col = cell
-                                if inventory[row][col] is None:
-                                    inventory[row][col] = config.dragged_item
-                                else:
-                                    if inventory[row][col]["name"] == config.dragged_item["name"]:
-                                        inventory[row][col]["quantity"] += config.dragged_item["quantity"]
-                                    else:
-                                        if inventory[row][col] != config.dragged_item:
-                                            inventory[row][col], config.dragged_item = config.dragged_item, inventory[row][col]
-                            config.dragging = False
-                            config.dragged_item = None
-
             wn.blit(background, (config.bg_x, config.bg_y))
 
-            hero.update(keys_pressed, config.mouse_pressed, enemy, can_move, last_key)
+            hero.update(keys_pressed, config.mouse_pressed, can_move, last_key, collision_rects, enemy)
             hero.draw(wn)
             hero.barra_healt(wn, 3, 4)
 
@@ -169,3 +141,4 @@ def level2():
 
         if player_won:
             level_complete = True
+            level3()

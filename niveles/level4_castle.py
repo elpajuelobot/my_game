@@ -1,13 +1,18 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pygame import *
+from pygame import Rect
 import pytmx
 from variables import config
 
-def files_and_var():
+def files_and_var(map):
     # Archivo del mapa
-    tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_final_version.tmx")
+    if map == 1:
+        tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_final_version.tmx")
+    elif map == 2:
+        tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_2.tmx")
+    else:
+        print("Elige 1/2")
 
     # Variables necesarias
     ANCHO_TILE = tmx_data.tilewidth

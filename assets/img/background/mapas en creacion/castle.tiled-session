@@ -3,13 +3,17 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "map_castle_interior_final_version.tmx",
+    "activeFile": "map_castle_interior_2.tmx",
     "expandedProjectPaths": [
         "."
     ],
     "fileStates": {
         "castle_interior.tsx": {
             "scaleInDock": 1.5,
+            "scaleInEditor": 1
+        },
+        "castle_interior_2.tsx": {
+            "scaleInDock": 3,
             "scaleInEditor": 1
         },
         "map_castle_interior.tmx": {
@@ -20,32 +24,57 @@
                 "y": 383.99999999999994
             }
         },
+        "map_castle_interior_2.tmx": {
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 528,
+                "y": 386
+            }
+        },
         "map_castle_interior_final_version.tmx": {
             "scale": 1,
-            "selectedLayer": 1,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 536.5,
-                "y": 409
+                "x": 493,
+                "y": 414
             }
+        },
+        "puerta.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "puerta_2.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         }
     },
+    "last.exportedFilePath": "C:/Users/elpaj/Documents/my_game/assets/img/background/mapas en creacion",
     "last.imagePath": "C:/Users/elpaj/Documents/my_game/assets/img/background/mapas en creacion",
     "map.height": 48,
+    "map.lastUsedExportFilter": "Archivos de mapas de Tiled (*.tmx *.xml)",
     "map.lastUsedFormat": "tmx",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "map.width": 64,
     "openFiles": [
+        "map_castle_interior_2.tmx",
         "map_castle_interior_final_version.tmx",
-        "castle_interior.tsx"
+        "castle_interior_2.tsx"
     ],
     "project": "castle.tiled-project",
     "recentFiles": [
-        "castle_interior.tsx",
+        "puerta_2.tsx",
+        "castle_interior_2.tsx",
         "map_castle_interior_final_version.tmx",
+        "map_castle_interior_2.tmx",
+        "puerta.tsx",
+        "castle_interior.tsx",
         "map_castle_interior.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
+    "tileset.margin": 0,
+    "tileset.spacing": 0,
     "tileset.tileSize": {
         "height": 16,
         "width": 16

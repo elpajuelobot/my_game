@@ -1,6 +1,6 @@
-import pygame
+from pygame import init, font, time
 
-pygame.init()
+init()
 
 class Variables:
     def __init__(self):
@@ -50,8 +50,8 @@ class Variables:
         self.attack_range = 10
 
         # texto
-        self.fuente = pygame.font.Font(None, 30)
-        self.text_level_font = pygame.font.Font(fuente, 120)
+        self.fuente = font.Font(None, 30)
+        self.text_level_font = font.Font(fuente, 120)
         self.text_color = (255, 255, 255)
 
         # Mantener ventanas abiertas
@@ -61,16 +61,16 @@ class Variables:
         self.menu_niveles = True
 
         # Configuración de fps
-        self.clock = pygame.time.Clock()
+        self.clock = time.Clock()
         self.FPS = 60
 
         # Ajustes de menú de inicio
-        self.font_menu = pygame.font.Font(None, 36)
+        self.font_menu = font.Font(None, 36)
         self.backtext_x = 127
         self.backtext_y = -135
 
         # Ajustes menú opciones
-        self.fontMenuOpciones = pygame.font.Font(None, 39)
+        self.fontMenuOpciones = font.Font(None, 39)
 
         # Botones
         self.colorButton = (0, 190, 0)
@@ -86,7 +86,7 @@ class Variables:
         self.inv_y = self.HEIGHT // 2
         self.GRAY = (169, 169, 169)
         self.BLACK = (0, 0, 0)
-        self.font_inventary = pygame.font.Font(fuente, 19)
+        self.font_inventary = font.Font(fuente, 19)
 
         # Objetos
         self.take_object = False

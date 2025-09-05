@@ -1,4 +1,4 @@
-from pygame import *
+from pygame import Rect, key, K_s, K_d, K_a, K_w, K_SPACE, time, draw
 from variables import config
 from animaciones import *
 import math
@@ -70,7 +70,7 @@ class Player:
         self.dx = 0  # Reinicia la velocidad horizontal en cada fotograma
         is_moving = False
 
-        if keys_pressed[K_s] and keys_pressed[K_d] and self.hitbox_player.x < 990:
+        if keys_pressed[K_s] and keys_pressed[K_d] and self.hitbox_player.x < 995:
             self.dx = config.speed_player
             self.crouch = True
             self.crouch_walk = True
@@ -94,7 +94,7 @@ class Player:
             self.crouch_walk = False
             is_moving = False
 
-        elif keys_pressed[K_d] and self.hitbox_player.x < 990:
+        elif keys_pressed[K_d] and self.hitbox_player.x < 995:
             self.dx = config.speed_player
             self.crouch = False
             self.crouch_walk = False
@@ -107,6 +107,17 @@ class Player:
             self.crouch_walk = False
             self.facing_right = False
             is_moving = True
+
+        #TODO: Hitbox del jugador
+        old_bottom = self.hitbox_player.bottom
+
+        if self.crouch:
+            current_height = int(self.height_player * 0.5)
+            self.hitbox_player.height = current_height
+        else:
+            self.hitbox_player.height = self.height_player
+
+        self.hitbox_player.bottom = old_bottom
 
         #TODO: Lógica de salto y gravedad
         self.dy += self.gravity
@@ -188,21 +199,7 @@ class Player:
         self.y = self.hitbox_player.y
 
     def draw(self, wn):
-        #TODO: Hitbox del jugador
-        current_width = self.widht_player
-        current_height = self.height_player
-
-        # Ajuste para la posición agachada
-        if self.state == PlayerState.CROUCH or self.state == PlayerState.WALKING and self.crouch and self.crouch_walk:
-            current_width = self.widht_player
-            current_height = int(self.height_player * 0.5)
-            crouch_y = self.base_y + (self.height_player - current_height)
-            self.hitbox_player = Rect(self.x, crouch_y, current_width, current_height)
-        else:
-            self.hitbox_player = Rect(self.x, self.base_y, self.widht_player, self.height_player)
-            self.y = self.base_y
-
-        draw.rect(wn, (255, 0, 0), self.hitbox_player, 2)
+        #draw.rect(wn, (255, 0, 0), self.hitbox_player, 2)
 
         #TODO: Animación de salto
         if self.state == PlayerState.JUMPING:
@@ -215,7 +212,7 @@ class Player:
             #! Dibujar animación de salto
             #?wn.blit(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.x, self.y))
             current_frame = transform.scale(anim_list[self.jump_anim_count // 3 % len(anim_list)], (self.widht_player, self.height_player))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
         #TODO: Animación de ataque
         elif self.state == PlayerState.ATTACKING:
@@ -223,7 +220,7 @@ class Player:
             #! Dibujar animación de ataque
             #?wn.blit(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.x, self.y))
             current_frame = transform.scale(anim_list[self.attack_anim_count // 5 % len(anim_list)], (self.widht_player, self.height_player))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
         #TODO: Animación de momiviento
         elif self.state == PlayerState.WALKING and not self.crouch:
@@ -236,7 +233,7 @@ class Player:
             #! Dibujar animación de movimiento
             #?wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
             current_frame = transform.scale(anim_list[self.walk_count // 2 % len(anim_list)], (self.widht_player, self.height_player))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
         #TODO: Animación cuando está parado
         elif self.state == PlayerState.IDLE:
@@ -248,7 +245,7 @@ class Player:
             #! Dibujar animación de cuando está parado
             #?wn.blit(anim_list[self.walk_count // 5 % len(anim_list)], (self.x, self.y))
             current_frame = transform.scale(anim_list[self.walk_count // 5 % len(anim_list)], (self.widht_player, self.height_player))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
         #TODO: Animación de muerte
         elif self.state == PlayerState.DEAD:
@@ -264,7 +261,7 @@ class Player:
                     #?wn.blit(dead_left_path[self.death_count // 5 % len(dead_left_path)], (self.x, self.y))
                     current_frame = transform.scale(dead_left_path[self.death_count // 5 % len(dead_left_path)], (self.widht_player, self.height_player))
 
-                wn.blit(current_frame, (self.x, self.y))
+                wn.blit(current_frame, self.hitbox_player.topleft)
                 self.death_count += 1
 
             else:
@@ -285,10 +282,13 @@ class Player:
             else:
                 anim_list = crouchWalk_left
 
+            current_width = self.widht_player
+            current_height = int(self.height_player * 0.5)
+
             #! Dibujar animación de movimiento agachado
             #?wn.blit(anim_list[self.walk_count // 2 % len(anim_list)], (self.x, self.y))
             current_frame = transform.scale(anim_list[self.walk_count // 2 % len(anim_list)], (current_width, current_height))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
         #TODO: Animación de agachado
         elif self.state == PlayerState.CROUCH:
@@ -297,9 +297,12 @@ class Player:
             else:
                 anim_list = crouch_left
 
+            current_width = self.widht_player
+            current_height = int(self.height_player * 0.5)
+
             #?wn.blit(anim_list, (self.x, self.y))
             current_frame = transform.scale(anim_list, (current_width, current_height))
-            wn.blit(current_frame, (self.x, self.y))
+            wn.blit(current_frame, self.hitbox_player.topleft)
 
     def barra_healt(self, wn, x, y):
         calculo_barra = int((self.health / self.max_health) * config.widht_healt)

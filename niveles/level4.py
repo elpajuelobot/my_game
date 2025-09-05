@@ -1,7 +1,8 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pygame import *
+from pygame import (display, transform, image, Rect, time, key, event, QUIT, KEYDOWN, K_ESCAPE, MOUSEBUTTONDOWN,
+                    MOUSEBUTTONUP, K_e, K_w)
 from variables import config
 from personajes import Player
 from random import randint
@@ -19,7 +20,8 @@ def level4():
     castle_2 = transform.scale(image.load("assets/img/background/castle_02.png").convert_alpha(), (500, 500))
     grass_superior = transform.scale(image.load("assets/img/background/area juego/background descompuesto/Layer_0000_9.png").convert_alpha(), (1024, 768))
     castle_door_hitbox = Rect(800, 562, 40, 140)
-    map_data, tile_w, tile_h = files_and_var()
+    map_data, tile_w, tile_h = files_and_var(1)
+    map_data2, tile_w2, tile_h2 = files_and_var(2)
     teclas = teclado()
     img_e = teclas['tecla_e']
     img_e_pressed = teclas['tecla_e_pressed']
@@ -47,7 +49,9 @@ def level4():
         font_countdown = config.text_level_font
         last_key = 0
         new_map = False
+        map = 1
         castle_map_initialized = False
+        new_x = False
 
         # Tiempo de espera
         start_time = time.get_ticks()
@@ -99,14 +103,32 @@ def level4():
                 wn.blit(grass_superior, (config.bg_x, config.bg_y - 5))
             else:
                 if not castle_map_initialized:
-                    hero.y = 10
-                    hero.x = 5
+                    hero.y = 290
+                    if not new_x:
+                        hero.x = 5
+                    elif new_x:
+                        hero.x = 990
                     hero.set_size(20.5, 37.5)
                     collision_rects.clear()
-                    build_collisions(collision_rects, map_data)
+                    if map == 1:
+                        build_collisions(collision_rects, map_data)
+                    elif map == 2:
+                        build_collisions(collision_rects, map_data2)
                     castle_map_initialized = True
+                    new_x = False
 
-                draw_map(wn, map_data, tile_w, tile_h)
+                if map == 1:
+                    draw_map(wn, map_data, tile_w, tile_h)
+                elif map == 2:
+                    draw_map(wn, map_data2, tile_w2, tile_h2)
+
+            if hero.hitbox_player.x >= 995 and map == 1:
+                map = 2
+                castle_map_initialized = False
+            elif hero.hitbox_player.x <= 3 and map == 2:
+                map = 1
+                castle_map_initialized = False
+                new_x = True
 
             hero.update(keys_pressed, config.mouse_pressed, can_move, last_key, collision_rects)
             hero.draw(wn)

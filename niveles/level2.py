@@ -1,7 +1,8 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pygame import *
+from pygame import (display, transform, image, Rect, time, key, event, QUIT, KEYDOWN, K_ESCAPE, MOUSEBUTTONDOWN,
+                    MOUSEBUTTONUP, mouse)
 from variables import config
 from personajes import Player, Villain
 from random import randint

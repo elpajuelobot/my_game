@@ -13,7 +13,7 @@ pygame.display.set_caption("Juego con Colisiones y Salto")
 # --- 2. Cargar el mapa y los rectángulos de colisión ---
 # Asegúrate de que la ruta a tu archivo .tmx sea correcta
 try:
-    tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_final_version.tmx")
+    tmx_data = pytmx.load_pygame(r"C:\Users\elpaj\Documents\my_game\assets\img\background\mapas en creacion\map_castle_interior_2.tmx")
 except FileNotFoundError:
     print("Error: No se encontró el archivo de mapa. Asegúrate de que la ruta sea correcta.")
     pygame.quit()

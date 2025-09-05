@@ -1,7 +1,8 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pygame import *
+from pygame import (display, transform, image, Rect, time, key, event, QUIT, KEYDOWN, K_ESCAPE, MOUSEBUTTONDOWN,
+                    MOUSEBUTTONUP, K_e)
 from variables import config
 from personajes import Player, Villain
 from special_villain import VillainLevel3
@@ -9,7 +10,6 @@ from random import randint
 from animaciones import healt_potion, coin, dead_path, villain, teclado
 from cinematicas.cinematicas import reproducir_cinematica
 from menu_pausa import menu_pausa
-import math
 
 def level3():
     wn = display.set_mode((config.WIDHT, config.HEIGHT))

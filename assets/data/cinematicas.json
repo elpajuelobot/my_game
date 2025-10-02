@@ -56,7 +56,7 @@
         ]
     },
     "level3": {
-        "intro":[
+        "intro": [
             {
                 "personaje": "anciano",
                 "texto": "Estoy impresionado muchacho, pasemos ya por fin a la última prueba.",
@@ -78,7 +78,7 @@
                 "duracion": 5
             }
         ],
-        "ending_win":[
+        "ending_win": [
             {
                 "personaje": "anciano",
                 "texto": "Exelente, has superado tu última prueba.",
@@ -104,6 +104,32 @@
             {
                 "personaje": "anciano",
                 "texto": "¡Por poco! Esfuérzate al máximo, es tu última prueba.",
+                "duracion": 5
+            }
+        ]
+    },
+    "level4": {
+        "charla_rey": [
+            {
+                "personaje": "rey",
+                "texto": "Saludos caballero, nuestro reino está en peligro y necesita tu ayuda.",
+                "duracion": 5
+            },
+            {
+                "personaje": "rey",
+                "texto": "Una misteriosa fuerza maligna se está apoderando y destruyendo de todo lo que encuentra.",
+                "duracion": 5
+            },
+            {
+                "personaje": "rey",
+                "texto": "Deberás encontrar a su reina y destruirla para liberar al pueblo y salvarnos a todos.",
+                "duracion": 5
+            }
+        ],
+        "ending": [
+            {
+                "personaje": "caballero",
+                "texto": "Vaya, esto no es una tarea solo para uno, necesitaré reclutar a mi antiguo equipo.",
                 "duracion": 5
             }
         ]

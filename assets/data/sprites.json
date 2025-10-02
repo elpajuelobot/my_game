@@ -1,4 +1,5 @@
 {
     "caballero": "assets/img/players/hero/_idle_0.png",
-    "anciano": "assets/img/players/npc/anciano/idle_2.png"
+    "anciano": "assets/img/players/npc/anciano/idle_2.png",
+    "rey": "assets/img/players/npc/king/mis sprites/king_0001.png"
 }

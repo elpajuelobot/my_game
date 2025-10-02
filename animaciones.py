@@ -122,3 +122,16 @@ def teclado():
     teclas_image['tecla_w_pressed'] = transform.scale(image.load("C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\objetos\\teclado_image\\cortados\\Key_pressed_w.png"), (config.widht_key_image, config.height_key_image))
 
     return teclas_image
+
+def npc(name, width, height):
+    animations = {}
+
+    if name == "king":
+        animations['idle_right'] = transform.scale(image.load('assets/img/players/npc/king/mis sprites/king_0001.png'), (width, height))
+        animations['idle_left'] = transform.scale(image.load('assets/img/players/npc/king/mis sprites/left_king_0001.png'), (width, height))
+        animations['sword_right'] = [transform.scale(image.load(f'assets/img/players/npc/king/mis sprites/king_000{i}.png'), (width, height)) for i in range(1, 6)]
+        animations['sword_left'] = [transform.scale(image.load(f'assets/img/players/npc/king/mis sprites/left_king_000{i}.png'), (width, height)) for i in range(1, 6)]
+        animations['walk_right'] = [transform.scale(image.load(f'assets/img/players/npc/king/mis sprites/king_walk_000{i}.png'), (width, height)) for i in range(1, 7)]
+        animations['walk_left'] = [transform.scale(image.load(f'assets/img/players/npc/king/mis sprites/left_king_walk_000{i}.png'), (width, height)) for i in range(1, 7)]
+
+    return animations

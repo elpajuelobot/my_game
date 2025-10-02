@@ -4,9 +4,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pygame import (display, transform, image, Rect, time, key, event, QUIT, KEYDOWN, K_ESCAPE, MOUSEBUTTONDOWN,
                     MOUSEBUTTONUP, K_e, K_w)
 from variables import config
-from personajes import Player
-from random import randint
-from animaciones import healt_potion, coin, dead_path, teclado
+from personajes import Player, Npc
+from animaciones import dead_path, teclado
 from cinematicas.cinematicas import reproducir_cinematica
 from menu_pausa import menu_pausa
 import math
@@ -19,9 +18,11 @@ def level4():
     castle_1 = transform.scale(image.load("assets/img/background/castle_01.png").convert_alpha(), (500, 500))
     castle_2 = transform.scale(image.load("assets/img/background/castle_02.png").convert_alpha(), (500, 500))
     grass_superior = transform.scale(image.load("assets/img/background/area juego/background descompuesto/Layer_0000_9.png").convert_alpha(), (1024, 768))
-    castle_door_hitbox = Rect(800, 562, 40, 140)
     map_data, tile_w, tile_h = files_and_var(1)
     map_data2, tile_w2, tile_h2 = files_and_var(2)
+    map_data3, tile_w3, tile_h3 = files_and_var(3)
+    castle_door_hitbox_map2 = Rect(430, 250, 148, 110)
+    castle_door_hitbox = Rect(800, 562, 40, 140)
     teclas = teclado()
     img_e = teclas['tecla_e']
     img_e_pressed = teclas['tecla_e_pressed']
@@ -30,15 +31,14 @@ def level4():
     PROXIMITY = 100
     castle_open = False
     request_open = False
-
-    #reproducir_cinematica(wn, "level3", "intro")
-
+    hidden = {"puerta_abierta"}
     suelo_rect = Rect(0, config.HEIGHT - 50, config.WIDHT, 50)
     collision_rects = [suelo_rect]
 
     level_complete = False
     while not level_complete:
         hero = Player(5, config.y_player, config.healt_player, 10)
+        king = Npc(x=821, y=216, width=20.5, height=37.5, name="king", to_x=474, to_y=216, speed=1)
         config.prj_width = 60
         config.prj_height = 60
 
@@ -52,6 +52,8 @@ def level4():
         map = 1
         castle_map_initialized = False
         new_x = False
+        initialized_map_3 = False
+        door_dist = False
 
         # Tiempo de espera
         start_time = time.get_ticks()
@@ -114,13 +116,23 @@ def level4():
                         build_collisions(collision_rects, map_data)
                     elif map == 2:
                         build_collisions(collision_rects, map_data2)
+                    elif map == 3:
+                        build_collisions(collision_rects, map_data3)
                     castle_map_initialized = True
                     new_x = False
+
+                if map == 2:
+                    if castle_open:
+                        hidden.discard("puerta_abierta")
+                    else:
+                        hidden.add("puerta_abierta")
 
                 if map == 1:
                     draw_map(wn, map_data, tile_w, tile_h)
                 elif map == 2:
-                    draw_map(wn, map_data2, tile_w2, tile_h2)
+                    draw_map(wn, map_data2, tile_w2, tile_h2, hidden)
+                elif map == 3:
+                    draw_map(wn, map_data3, tile_w3, tile_h3)
 
             if hero.hitbox_player.x >= 995 and map == 1:
                 map = 2
@@ -129,40 +141,62 @@ def level4():
                 map = 1
                 castle_map_initialized = False
                 new_x = True
+            elif initialized_map_3:
+                map = 3
+                castle_map_initialized = False
+                new_x = False
+                initialized_map_3 = False
 
             hero.update(keys_pressed, config.mouse_pressed, can_move, last_key, collision_rects)
             hero.draw(wn)
             hero.barra_healt(wn, 3, 4)
 
-            dist = math.hypot(hero.hitbox_player.centerx - castle_door_hitbox.centerx,
-                            hero.hitbox_player.centery - castle_door_hitbox.centery)
+            if map == 3:
+                king.update(hero)
+                king.draw(wn, "level4", "charla_rey")
 
-            if dist <= PROXIMITY:
-                if not castle_open:
-                    if keys_pressed[K_e]:
-                        prompt = img_e_pressed
-                    else:
-                        prompt = img_e
-                else:
-                    if keys_pressed[K_w]:
-                        prompt = img_w_pressed
-                        new_map = True
-                    else:
-                        prompt = img_w
-
-                px = castle_door_hitbox.centerx - prompt.get_width() // 2
-                py = castle_door_hitbox.centery - prompt.get_height() - 8
-                wn.blit(prompt, (px, py))
-
-            if request_open and dist <= PROXIMITY:
-                castle_open = True
-            request_open = False
-
-            if hero.health <= 0:
-                hero.is_death = True
-                if hero.death_count >= len(dead_path) * 5 and hero.death_timer != 0 and time.get_ticks() - hero.death_timer > 3000:
-                    player_won = False
+                if king.finish_npc_work:
                     internal_game = False
+                    player_won = True
+                    king.finish_npc_work = False
+
+            if not new_map:
+                door_hitbox = castle_door_hitbox
+                door_dist = True
+            elif map == 2:
+                door_hitbox = castle_door_hitbox_map2
+                door_dist = True
+            else:
+                door_dist = False
+
+            if door_dist:
+                dist = math.hypot(hero.hitbox_player.centerx - door_hitbox.centerx,
+                                hero.hitbox_player.centery - door_hitbox.centery)
+
+                if dist <= PROXIMITY:
+                    if not castle_open:
+                        if keys_pressed[K_e]:
+                            prompt = img_e_pressed
+                        else:
+                            prompt = img_e
+                    else:
+                        if keys_pressed[K_w]:
+                            castle_open = False
+                            prompt = img_w_pressed
+                            if not new_map:
+                                new_map = True
+                            if map == 2:
+                                initialized_map_3 = True
+                        else:
+                            prompt = img_w
+
+                    px = door_hitbox.centerx - prompt.get_width() // 2
+                    py = door_hitbox.centery - prompt.get_height() - 8
+                    wn.blit(prompt, (px, py))
+
+                if request_open and dist <= PROXIMITY:
+                    castle_open = True
+                request_open = False
 
             # Cuenta atrás inicial
             elapsed = time.get_ticks() - start_time
@@ -177,28 +211,12 @@ def level4():
 
             display.update()
 
-        end_time = time.get_ticks()
-        while time.get_ticks() - end_time < config.delay_final:
-            config.clock.tick(config.FPS)
-            for e in event.get():
-                if e.type == QUIT:
-                    config.game = False
-                    break
-
-            wn.blit(background, (config.bg_x, config.bg_y))
-            hero.draw(wn)
-            hero.barra_healt(wn, 3, 4)
-
-            display.update()
-
         if not config.game:
             break
 
         if mostrar_cine:
             if player_won:
-                reproducir_cinematica(wn, "level3", "ending_win")
-            else:
-                reproducir_cinematica(wn, "level3", "ending_lose")
+                reproducir_cinematica(wn, "level4", "ending")
 
         if player_won:
             level_complete = True

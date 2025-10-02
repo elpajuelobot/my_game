@@ -1,10 +1,9 @@
-from pygame import Rect, key, K_s, K_d, K_a, K_w, K_SPACE, time, draw
+from pygame import Rect, key, K_s, K_d, K_a, K_w, K_e, K_SPACE, time, draw
 from variables import config
 from animaciones import *
 import math
-from random import randint
 from enum import Enum
-
+from cinematicas.cinematicas import reproducir_cinematica
 
 #todo: Clase player
 class PlayerState(Enum):
@@ -32,13 +31,13 @@ class Player:
 
         #TODO: Salto
         self.jump_anim_count = 0
-        self.dy = 0  # Velocidad vertical del jugador
-        self.gravity = 0.5  # Fuerza de la gravedad
-        self.jump_strength = -10  # Fuerza del salto hacia arriba
+        self.dy = 0
+        self.gravity = 1.0
+        self.jump_strength = -12
         self.on_ground = False
 
         #TODO: Ataque
-        self.attack_anim_count = 0 # Contador de animación de ataque
+        self.attack_anim_count = 0
         self.attack_damage_applied = False
         self.current_attack_frames = []
 
@@ -67,7 +66,7 @@ class Player:
             return
 
         #TODO: Movimiento horizontal
-        self.dx = 0  # Reinicia la velocidad horizontal en cada fotograma
+        self.dx = 0
         is_moving = False
 
         if keys_pressed[K_s] and keys_pressed[K_d] and self.hitbox_player.x < 995:
@@ -132,14 +131,14 @@ class Player:
         self.hitbox_player.x += self.dx
         for rect in collision_rects:
             if self.hitbox_player.colliderect(rect):
-                if self.dx > 0:  # Moviéndose a la derecha
+                if self.dx > 0:
                     self.hitbox_player.right = rect.left
-                if self.dx < 0:  # Moviéndose a la izquierda
+                if self.dx < 0:
                     self.hitbox_player.left = rect.right
-                # Lógica de escalada: si el jugador colisiona y está en el suelo.
+
                 if self.on_ground:
                     self.hitbox_player.y -= 10
-                    self.dy = 0 # Detiene la caída al subir un escalón.
+                    self.dy = 0
 
         #! Verticales
         self.hitbox_player.y += self.dy
@@ -203,7 +202,7 @@ class Player:
 
         #TODO: Animación de salto
         if self.state == PlayerState.JUMPING:
-            self.jump_anim_count += 1 # Avanza la animación de salto
+            self.jump_anim_count += 1
             if self.facing_right:
                 anim_list = jump_right_path
             else:
@@ -534,7 +533,7 @@ class Villain:
         if self.hitbox_enemy.colliderect(player.hitbox_player):
             player.health -= self.num_hurt
 
-#todo: Clase proyectil
+#Todo: Clase proyectil
 class Projectile:
     def __init__(self, x, y, target_X, target_y, speed, damage, animation_frames):
         self.x = x
@@ -566,8 +565,7 @@ class Projectile:
         self.rect.center = (self.x, self.y)
         self.current_frame = (self.current_frame + 1) % len(self.animation_frames)
 
-        # Si el proyectil sale de la pantalla, lo hacemos invisible
-        if self.x < -50 or self.x > config.WIDHT + 50 or self.y < -50 or self.y > config.HEIGHT + 50: # Asumiendo config.WIDTH existe
+        if self.x < -50 or self.x > config.WIDHT + 50 or self.y < -50 or self.y > config.HEIGHT + 50:
             self.visible = False
             return
 
@@ -585,7 +583,95 @@ class Projectile:
             player.health -= self.damage
             self.visible = False
 
-
     def draw(self, wn):
         if self.visible:
             wn.blit(self.animation_frames[self.current_frame], self.rect.topleft)
+
+class Npc:
+    def __init__(self, x, y, width, height, name, to_x, to_y, speed):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.animations = npc(name, self.width, self.height)
+        self.hitbox_npc = Rect(self.x, self.y, self.width, self.height)
+        self.state = self.animations["idle_right"]
+        self.range = 20
+        self.start_moving = False
+        self.move_to_x = to_x
+        self.move_to_y = to_y
+        self.in_coor = False #! RECORDATORIO: Esta variable sirve para saber si el npc ha llegado a la coordenada establecida
+        self.walk_count = 0
+        self.second_anim_count = 0
+        self.speed = speed
+        self.cinematic = False
+        self.second_anim = False
+        self.second_anim_timer = 0
+        self.repeat = True
+        self.last_animantion_frame = True
+        self.finish_npc_work = False
+
+    def update(self, player):
+        self.hitbox_npc.x = self.x
+        self.hitbox_npc.y = self.y
+
+        if self.repeat:
+            distance = math.hypot(player.hitbox_player.centerx - self.hitbox_npc.centerx,
+                                player.hitbox_player.centery - self.hitbox_npc.centery)
+
+            if distance <= self.range:
+                self.start_moving = True
+                self.repeat = False
+            else:
+                self.start_moving = False
+
+        if self.start_moving and not self.in_coor:
+            # Mover horizontalmente
+            if abs(self.x - self.move_to_x) > self.speed:
+                if self.x > self.move_to_x:
+                    self.x -= self.speed
+                    self.state = self.animations.get("walk_left", self.state)
+                else:
+                    self.x += self.speed
+                    self.state = self.animations.get("walk_right", self.state)
+            else:
+                self.x = self.move_to_x
+
+            # Mover verticalmente
+            if abs(self.y - self.move_to_y) > self.speed:
+                if self.y > self.move_to_y:
+                    self.y -= self.speed
+                else:
+                    self.y += self.speed
+            else:
+                self.y = self.move_to_y
+
+            if abs(self.x - self.move_to_x) < 2 and abs(self.y - self.move_to_y) < 2:
+                self.in_coor = True
+                self.cinematic = True
+                self.start_moving = False
+
+    def draw(self, wn, level, tipo):
+        if self.start_moving:
+            wn.blit(self.state[self.walk_count // config.ANIMATION_SPEED % len(self.state)], (self.x, self.y))
+            self.walk_count += 1
+        elif self.in_coor:
+            if self.cinematic:
+                reproducir_cinematica(wn, level, tipo)
+                self.cinematic = False
+            elif self.second_anim_count < len(self.animations["sword_left"]) * config.ANIMATION_SPEED:
+                wn.blit(self.animations["sword_left"][self.second_anim_count // config.ANIMATION_SPEED % len(self.state)], (self.x, self.y))
+                self.second_anim_count += 1
+            else:
+                if self.last_animantion_frame:
+                    wn.blit(self.animations["sword_left"][-1], (self.x, self.y))
+                if self.second_anim_timer == 0:
+                    self.second_anim_timer = time.get_ticks()
+
+                if time.get_ticks() - self.second_anim_timer > 5000:
+                    self.last_animantion_frame = False
+                    wn.blit(self.animations["idle_left"], (self.x, self.y))
+                    self.finish_npc_work = True
+
+        else:
+            wn.blit(self.animations["idle_left"], (self.x, self.y))

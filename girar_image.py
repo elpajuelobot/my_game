@@ -27,6 +27,6 @@ def voltear_imagenes_en_lote(carpeta_entrada, carpeta_salida):
             voltear_imagen(ruta_original, ruta_volteada)
 
 if __name__ == "__main__":
-    carpeta_entrada = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\players\\villian\\Knight\\derecha"     # Carpeta con imágenes originales
-    carpeta_salida = "C:\\Users\\elpaj\\Documents\\my_game\\assets\\img\\players\\villian\\Knight\\izquierda"    # Carpeta para guardar las imágenes volteadas
+    carpeta_entrada = r"C:\Users\elpaj\Documents\my_game\assets\img\players\npc\king\mis sprites\derecha"     # Carpeta con imágenes originales
+    carpeta_salida = r"C:\Users\elpaj\Documents\my_game\assets\img\players\npc\king\mis sprites"    # Carpeta para guardar las imágenes volteadas
     voltear_imagenes_en_lote(carpeta_entrada, carpeta_salida)
